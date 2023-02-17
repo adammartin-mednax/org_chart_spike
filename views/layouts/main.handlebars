@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D3 Bar Chart</title>
+</head>
+<body>
+    <h2>Org Chart</h2>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-org-chart@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-flextree@2.1.2/build/d3-flextree.js"></script>
+
+    <div class="chart-container" style="height: 1200px; background-color: white"></div>
+
+    <script>
+      var chart;
+
+      function buildTree(data, ceo_name) {
+        const treeData = [];
+
+        // First, create a map of nodes keyed by their id
+        const nodeMap = {};
+        data.forEach(node => {
+          node.children = [];
+          nodeMap[node.id] = node;
+        });
+
+        // Next, build the tree by iterating over each node and adding it to its parent's children array
+        data.forEach(node => {
+          if (node.parentId && node.parentId !== node.id) {
+            const parentNode = nodeMap[node.parentId];
+            if(parentNode) {
+              parentNode.children.push(node);
+            } else {
+              console.warn(`Node ${node.id} has a parent with ID ${node.parentId} that doesn't exist`);
+            }
+          } else {
+            // If the node has no parent, it is a root node and should be added to the tree
+            treeData.push(node);
+          }
+        });
+
+        // Find the tree with the ultimate parent node whose name matches the specified CEO name
+        const treeWithCEO = findTreeWithCEO(treeData, ceo_name);
+
+        // Convert the tree back to the same data type as d3.csv() returns
+        const result = [];
+        if (treeWithCEO) {
+          addNodesToResult(treeWithCEO, result);
+        }
+        return result;
+      }
+
+      function findTreeWithCEO(treeData, ceo_name) {
+        for (let i = 0; i < treeData.length; i++) {
+          const node = treeData[i];
+          if (node.name === ceo_name) {
+            return node;
+          } else if (node.children.length > 0) {
+            const result = findTreeWithCEO(node.children, ceo_name);
+            if (result) {
+              return result;
+            }
+          }
+        }
+
+        return null;
+      }
+
+      function addNodesToResult(node, result) {
+        result.push({
+          name: node.name,
+          office: node.office,
+          positionName: node.positionName,
+          id: node.id,
+          parentId: node.parentId
+        });
+
+        node.children.forEach(child => { addNodesToResult(child, result); });
+      }
+
+      d3.csv('csv/org_structure.csv').then( data => {
+          return buildTree(data, 'James Swift');
+      }).then(data => {
+        chart = new d3.OrgChart()
+          .container('.chart-container')
+          .data(data)
+          .render();
+      });
+    </script>
+</body>
+</html>
