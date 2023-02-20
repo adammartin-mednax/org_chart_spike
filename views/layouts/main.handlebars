@@ -83,10 +83,126 @@
 
       d3.csv('csv/org_structure.csv').then( data => {
           return buildTree(data, 'James Swift');
-      }).then(data => {
+      }).then((dataFlattened) => {
+        const mappedData = dataFlattened.map((d) => {
+          const width = Math.round(Math.random() * 50 + 300);
+          const height = Math.round(Math.random() * 20 + 130);
+          const cornerShape = ['ORIGINAL', 'ROUNDED', 'CIRCLE'][
+            Math.round(Math.random() * 2)
+          ];
+          const nodeImageWidth = 100;
+          const nodeImageHeight = 100;
+          const centerTopDistance = 0;
+          const centerLeftDistance = 0;
+          const expanded = false; //d.id=="O-6"
+
+          const titleMarginLeft = nodeImageWidth / 2 + 20 + centerLeftDistance;
+          const contentMarginLeft = width / 2 + 25;
+          return {
+            nodeId: d.id,
+            parentNodeId: d.parentId,
+            width: width,
+            height: height,
+            borderWidth: 1,
+            borderRadius: 5,
+            borderColor: {
+              red: 15,
+              green: 140,
+              blue: 121,
+              alpha: 1,
+            },
+            backgroundColor: {
+              red: 51,
+              green: 182,
+              blue: 208,
+              alpha: 1,
+            },
+            nodeImage: {
+              url: d.imageUrl,
+              width: nodeImageWidth,
+              height: nodeImageHeight,
+              centerTopDistance: centerTopDistance,
+              centerLeftDistance: centerLeftDistance,
+              cornerShape: cornerShape,
+              shadow: false,
+              borderWidth: 0,
+              borderColor: {
+                red: 19,
+                green: 123,
+                blue: 128,
+                alpha: 1,
+              },
+            },
+            nodeIcon: {
+              icon: 'https://to.ly/1yZnX',
+              size: 30,
+            },
+            template: `<div>
+                  <div style="margin-left:${titleMarginLeft}px;
+                              margin-top:10px;
+                              font-size:15px;
+                              font-weight:bold;
+                         ">${d.name} </div>
+                 <div style="margin-left:${titleMarginLeft}px;
+                              margin-top:3px;
+                              font-size:13px;
+                         ">${d.positionName} </div>
+
+                 <div style="margin-left:${titleMarginLeft}px;
+                              margin-top:3px;
+                              font-size:12px;
+                         ">${d.unit?.value || 'Unit'}</div>
+
+                 <div style="margin-left:${contentMarginLeft}px;
+                             margin-top:15px;
+                             font-size:12px;
+                             position:absolute;
+                             bottom:5px;
+                            ">
+                      <div>${d.office}</div>
+                      <div style="font-size:12px;margin-top:5px">${d.area}</div>
+                 </div>
+              </div>`,
+            connectorLineColor: {
+              red: 220,
+              green: 189,
+              blue: 207,
+              alpha: 1,
+            },
+            connectorLineWidth: 5,
+            dashArray: '',
+            expanded: expanded,
+          };
+        });
+
         chart = new d3.OrgChart()
           .container('.chart-container')
-          .data(data)
+          .data(mappedData)
+          .nodeWidth((n) => 250)
+          .nodeHeight((n) => 120)
+          .compactMarginBetween((d) => 50)
+          .siblingsMargin((d) => 100)
+          .nodeContent((d) => {
+            return `
+              <div class="outer-wrapper" style="padding-left:70px;padding-top:0px;background-color:none;width:${
+                d.width - 70
+              }px;height:${d.height}px">
+
+                <div  style="margin-left:-70px;margin-top:-40px;border-radius:5px;color:white;background-color:#2DA7C6;width:${
+                  d.width
+                }px;  height:${d.height}px">
+                   <div style="margin-left:-30px;padding-top:2px">${
+                     d.data.template
+                   }</div>
+
+                </div>
+
+                <div style="color:white;margin-top:-37px;margin-left:-65px"> ${
+                  d.data._totalSubordinates
+                } Subordinates <br/> ${d.data._directSubordinates} Direct</div>
+              </div>
+              `;
+          })
           .render();
       });
     </script>
